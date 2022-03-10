@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import { SourceMapConsumer } from "source-map";
 
 export class ErrorMapper {

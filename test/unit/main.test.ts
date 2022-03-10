@@ -23,7 +23,7 @@ describe("main", () => {
     assert.isUndefined(loop());
   });
 
-  it("Automatically delete memory of missing creeps", () => {
+  it("delete memory of missing creeps", () => {
     Memory.creeps.persistValue = "any value";
     Memory.creeps.notPersistValue = "any value";
 

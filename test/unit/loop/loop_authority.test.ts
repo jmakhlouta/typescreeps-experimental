@@ -5,7 +5,7 @@ import { SimpleLoopModule } from "loop/loop_module_simple";
 import { expect } from "chai";
 
 describe("loop authority", function () {
-  it("invokes all modules", function () {
+  it("invokes all registered modules", function () {
     let module1Invoked = false;
     let module2Invoked = false;
 

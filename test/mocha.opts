@@ -1,6 +1,7 @@
 --require test/setup-mocha.js
 --require ts-node/register
 --require tsconfig-paths/register
+--require test/setup-mock-game.js
 --ui bdd
 
 --reporter spec

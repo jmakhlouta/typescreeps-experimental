@@ -7,12 +7,7 @@ export class StaticLoopModules {
     const builder = new LoopBuilder();
 
     builder.addLoopModule(new CleanCreepsMemory());
-    builder.addLoopStep(logCpu);
 
     return builder.build();
   }
-}
-
-function logCpu() {
-  console.log(JSON.stringify(Game.cpu));
 }

@@ -3,6 +3,9 @@ const game = {
   rooms: [ ],
   spawns: { },
   time: 100,
+  cpu: {
+    getUsed: () => 0,
+  }
 };
 
 const memory = {

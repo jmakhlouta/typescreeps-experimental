@@ -1,18 +1,9 @@
-import { Game, Memory } from "./mock";
 import { assert } from "chai";
 import { loop } from "../../src/main";
 
 describe("main", () => {
-  before(() => {
-    // runs before all test in this block
-  });
-
-  beforeEach(() => {
-    // runs before each test in this block
-    // @ts-ignore : allow adding Game to global
-    global.Game = _.clone(Game);
-    // @ts-ignore : allow adding Memory to global
-    global.Memory = _.clone(Memory);
+  beforeEach("resetting game context", function () {
+    ResetGlobalGameContext();
   });
 
   it("should export a loop function", () => {
@@ -24,10 +15,9 @@ describe("main", () => {
   });
 
   it("delete memory of missing creeps", () => {
-    Memory.creeps.persistValue = "any value";
-    Memory.creeps.notPersistValue = "any value";
-
-    Game.creeps.persistValue = "any value";
+    Memory.creeps.persistValue = {} as CreepMemory;
+    Memory.creeps.notPersistValue = {} as CreepMemory;
+    Game.creeps.persistValue = {} as Creep;
 
     loop();
 

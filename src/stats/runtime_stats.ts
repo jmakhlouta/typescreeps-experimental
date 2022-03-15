@@ -68,7 +68,7 @@ export class RuntimeStats {
       dateRecorded: new Date(),
       tickRecorded: Game.time,
       loopDuration: RuntimeStats.loopEndTime - RuntimeStats.loopStartTime,
-      cpuUsed: Game.cpu.getUsed(),
+      cpuUsed: Game.cpu.getUsed()
     });
   }
 

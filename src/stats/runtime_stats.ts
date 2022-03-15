@@ -2,6 +2,7 @@ import { RecentStatsEntry, StatsMemory } from "./stats_memory";
 import { LoopStatsMemory } from "./loop_stats_memory";
 import { ServerStatsMemory } from "./server_stats_memory";
 
+const MaxRecent = 10;
 export class RuntimeStats {
   public static recycleTick: number = Game.time;
   public static recycleTime = Date.now();
@@ -47,15 +48,13 @@ export class RuntimeStats {
 
   private static endLoop(): void {
     RuntimeStats.createStatsMemory();
-
-    RuntimeStats.purgeOldStats();
-
     RuntimeStats.loopEndTime = Date.now();
     RuntimeStats.addLoopStatsEntry();
+    RuntimeStats.purgeOldStats();
   }
 
   private static addServerStatsEntry(recycleDuration: number): void {
-    Memory.stats.server.recent.push({
+    Memory.stats.server.recent.unshift({
       dateRecorded: new Date(),
       tickRecorded: Game.time,
       cpuUsed: Game.cpu.getUsed(),
@@ -64,7 +63,7 @@ export class RuntimeStats {
   }
 
   private static addLoopStatsEntry(): void {
-    Memory.stats.loop.recent.push({
+    Memory.stats.loop.recent.unshift({
       dateRecorded: new Date(),
       tickRecorded: Game.time,
       loopDuration: RuntimeStats.loopEndTime - RuntimeStats.loopStartTime,
@@ -78,7 +77,7 @@ export class RuntimeStats {
   }
 
   private static purgeRecent(recent: RecentStatsEntry[]) {
-    recent.length = Math.min(recent.length, Memory?.stats?.maxRecent ?? 20);
+    recent.length = Math.min(recent.length, Memory?.stats?.maxRecent ?? MaxRecent);
   }
 
   private static createStatsMemory() {
@@ -87,7 +86,7 @@ export class RuntimeStats {
     }
 
     if (!("maxRecent" in Memory.stats)) {
-      Memory.stats.maxRecent = 20;
+      Memory.stats.maxRecent = MaxRecent;
     }
 
     if (!("server" in Memory.stats)) {

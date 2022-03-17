@@ -4,10 +4,12 @@ import { RuntimeStats } from "stats/runtime_stats";
 import { ErrorMapper } from "utils/ErrorMapper";
 import { LoopAuthority } from "loop/loop_authority";
 import { StatsMemory } from "stats/stats_memory";
+import { FactMemory } from "scan/scan_memory";
 
 declare global {
   interface Memory {
     stats: StatsMemory;
+    facts: FactMemory;
   }
 
   interface CreepMemory {

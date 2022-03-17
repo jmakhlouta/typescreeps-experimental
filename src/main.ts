@@ -1,10 +1,11 @@
 /* eslint-disable sort-imports */
-// Server stats must be the first import so that it is at the top of the rollup output
+// RuntimeStats must be the first import so that it is at the top of the rollup output
 import { RuntimeStats } from "stats/runtime_stats";
+
 import { ErrorMapper } from "utils/ErrorMapper";
+import { FactMemory } from "scan/scan_memory";
 import { LoopAuthority } from "loop/loop_authority";
 import { StatsMemory } from "stats/stats_memory";
-import { FactMemory } from "scan/scan_memory";
 
 declare global {
   interface Memory {

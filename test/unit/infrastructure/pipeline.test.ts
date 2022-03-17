@@ -2,6 +2,11 @@
 import { Pipeline } from "infrastructure/pipeline";
 import { expect } from "chai";
 
+interface TestContext {
+  source: TestSource;
+  result: TestResult;
+}
+
 class TestSource {
   public ingredient: string;
 
@@ -19,128 +24,59 @@ class TestResult {
 }
 
 describe("pipeline", function () {
-  describe("empty pipeline", function () {
-    let factory: () => TestResult;
-    let pipeline: Pipeline<TestSource, TestResult>;
-
-    before(() => {
-      factory = () => {
-        return new TestResult();
-      };
-      pipeline = new Pipeline<TestSource, TestResult>(factory);
-    });
-
-    it("uses factory and preserves result context", function () {
-      const testResultReference = new TestResult();
-      const pseudofactory = () => {
-        return testResultReference;
-      };
-      const testPipeline = new Pipeline<TestSource, TestResult>(pseudofactory);
-      const pipelineReuslt = testPipeline.post(new TestSource("a,b,c"));
-
-      expect(pipelineReuslt).to.equal(testResultReference);
-      expect(pipelineReuslt).to.not.equal(new TestResult());
-      expect(pipelineReuslt).to.eql(new TestResult());
-    });
-
-    it("does not modify source", function () {
-      const source = new TestSource();
-      const sourceRef = source;
-      const matchingSource = new TestSource();
-
-      pipeline.post(source);
-
-      expect(source).to.equal(sourceRef);
-      expect(source).to.not.equal(matchingSource);
-      expect(source).to.eql(matchingSource);
-    });
-
-    it("emits distinct results", function () {
-      const source = new TestSource("a,b");
-      const result1 = pipeline.post(source);
-      const result2 = pipeline.post(source);
-
-      expect(result1).to.not.equal(result2);
-      expect(result1).to.deep.equal(result2);
-    });
-  });
-
   describe("multi-stage pipeline (append-to-source, split, reverse)", function () {
-    let pipeline: Pipeline<TestSource, TestResult>;
+    let pipeline: Pipeline<TestContext>;
 
     before(() => {
-      pipeline = new Pipeline<TestSource, TestResult>(
-        () => new TestResult(),
-        (source, result, next) => {
-          source.ingredient = source.ingredient.concat(",added-by-pipeline");
-          result.ops.push("secret-ingredient");
+      pipeline = new Pipeline<TestContext>(
+        (context, next) => {
+          context.source.ingredient = context.source.ingredient.concat(",added-by-pipeline");
+          context.result.ops.push("secret-ingredient");
           next();
         },
-        (source, result, next) => {
-          result.products.push(...source.ingredient.split(","));
-          result.ops.push("split");
+        (context, next) => {
+          context.result.products.push(...context.source.ingredient.split(","));
+          context.result.ops.push("split");
           next();
         },
-        (source, result, next) => {
-          result.products.reverse();
-          result.ops.push("reverse");
+        (context, next) => {
+          context.result.products.reverse();
+          context.result.ops.push("reverse");
           next();
         }
       );
     });
 
-    it("does not modify source", function () {
-      const source = new TestSource();
-      const sourceRef = source;
-      const matchingSource = new TestSource();
-
-      pipeline.post(source);
-
-      expect(source).to.equal(sourceRef);
-      expect(source).to.not.equal(matchingSource);
-      expect(source).to.eql(matchingSource);
-    });
-
-    it("emits distinct results", function () {
-      const source = new TestSource("a,b");
-      const result1 = pipeline.post(source);
-      const result2 = pipeline.post(source);
-
-      expect(result1).to.not.equal(result2);
-      expect(result1).to.deep.equal(result2);
-    });
-
     it("applies middleware (append, split, reverse)", function () {
-      const result = pipeline.post(new TestSource("a,b,c"));
+      const context = { source: new TestSource("a,b,c"), result: new TestResult() } as TestContext;
+      pipeline.invoke(context);
 
-      expect(result.ops).to.contain("secret-ingredient");
-      expect(result.ops).to.contain("split");
-      expect(result.ops).to.contain("reverse");
-      expect(result.quantity).to.equal(4);
-      expect(result.products).to.eql(["added-by-pipeline", "c", "b", "a"]);
+      expect(context.result.ops).to.contain("secret-ingredient");
+      expect(context.result.ops).to.contain("split");
+      expect(context.result.ops).to.contain("reverse");
+      expect(context.result.quantity).to.equal(4);
+      expect(context.result.products).to.eql(["added-by-pipeline", "c", "b", "a"]);
     });
   });
 
   describe("single-stage pipeline (split string pipeline)", function () {
-    let pipeline: Pipeline<TestSource, TestResult>;
+    let pipeline: Pipeline<TestContext>;
 
     before(() => {
-      pipeline = new Pipeline<TestSource, TestResult>(
-        () => new TestResult(),
-        (source, result, next) => {
-          result.products.push(...source.ingredient.split(","));
-          result.ops.push("split");
-          next();
-        }
-      );
+      pipeline = new Pipeline<TestContext>((context, next) => {
+        context.result.products.push(...context.source.ingredient.split(","));
+        context.result.ops.push("split");
+        next();
+      });
     });
 
     it("applies middleware (split)", function () {
-      const result = pipeline.post(new TestSource("a,b,c"));
+      const context = { source: new TestSource("a,b,c"), result: new TestResult() } as TestContext;
+      pipeline.invoke(context);
 
-      expect(result.ops).to.contain("split");
-      expect(result.quantity).to.equal(3);
-      expect(result.products).to.eql(["a", "b", "c"]);
+      expect(context.result.ops).to.contain("split");
+      expect(context.result.quantity).to.equal(3);
+      expect(context.result.products).to.eql(["a", "b", "c"]);
     });
   });
 });

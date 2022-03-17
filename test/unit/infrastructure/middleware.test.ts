@@ -5,6 +5,11 @@
 import { IMiddleware } from "infrastructure/middleware.interface";
 import { expect } from "chai";
 
+interface TestContext {
+  source: TestSource;
+  result: TestResult;
+}
+
 class TestSource {
   public ingredient: string;
 
@@ -24,30 +29,30 @@ class TestResult {
 class ComplexMiddleware {
   private secretIngredient = "chemical-x";
 
-  public toMiddleware(): IMiddleware<TestSource, TestResult> {
-    return (source: TestSource, result: TestResult, next: () => void) => {
-      source.ingredient = source.ingredient.concat(`,${this.secretIngredient}`);
+  public toMiddleware(): IMiddleware<TestContext> {
+    return (context: TestContext, next: () => void) => {
+      context.source.ingredient = context.source.ingredient.concat(`,${this.secretIngredient}`);
 
       next();
 
-      result.products = source.ingredient.split(",");
-      result.ops.push("split");
+      context.result.products = context.source.ingredient.split(",");
+      context.result.ops.push("split");
     };
   }
 }
 
 describe("middleware", function () {
   describe("simple", function () {
-    let middleware: IMiddleware<TestSource, TestResult>;
+    let middleware: IMiddleware<TestContext>;
 
     before(() => {
-      middleware = (source: TestSource, result: TestResult, next: () => void): void => {
-        source.ingredient = source.ingredient.concat(",added-by-middleware");
+      middleware = (context: TestContext, next: () => void): void => {
+        context.source.ingredient = context.source.ingredient.concat(",added-by-middleware");
 
         next();
 
-        result.products = source.ingredient.split(",");
-        result.ops.push("split");
+        context.result.products = context.source.ingredient.split(",");
+        context.result.ops.push("split");
       };
     });
 
@@ -58,7 +63,7 @@ describe("middleware", function () {
       const sourceRef = source;
       const sourceCopy = new TestSource("a,b,c,added-by-middleware");
 
-      middleware(source, new TestResult(), testNext);
+      middleware({ source, result: new TestResult() }, testNext);
 
       expect(source).to.equal(sourceRef);
       expect(source).to.not.equal(sourceCopy);
@@ -71,7 +76,7 @@ describe("middleware", function () {
       const result = new TestResult();
       const resultRef = result;
 
-      middleware(new TestSource("a,b,c"), result, testNext);
+      middleware({ source: new TestSource("a,b,c"), result }, testNext);
 
       expect(result).to.equal(resultRef);
     });
@@ -85,7 +90,7 @@ describe("middleware", function () {
         expect(result.ops).to.not.contain("split");
       };
 
-      middleware(source, result, testNext);
+      middleware({ source, result }, testNext);
 
       expect(result.ops).to.contain("split");
     });
@@ -93,7 +98,7 @@ describe("middleware", function () {
 
   describe("complex", function () {
     let complexMiddlewareHost: ComplexMiddleware;
-    let middleware: IMiddleware<TestSource, TestResult>;
+    let middleware: IMiddleware<TestContext>;
 
     before(() => {
       complexMiddlewareHost = new ComplexMiddleware();
@@ -107,7 +112,7 @@ describe("middleware", function () {
       const sourceRef = source;
       const sourceCopy = new TestSource("a,b,c,chemical-x");
 
-      middleware(source, new TestResult(), testNext);
+      middleware({ source, result: new TestResult() }, testNext);
 
       expect(source).to.equal(sourceRef);
       expect(source).to.not.equal(sourceCopy);

@@ -1,36 +1,32 @@
 import { ArrayIterator } from "./array_iterator";
 import { IMiddleware } from "./middleware.interface";
 
-export class Pipeline<TSource, TResult> {
-  private stages: IMiddleware<TSource, TResult>[];
-  private defaultResultFactory: () => TResult;
+export class Pipeline<TContext> {
+  private stages: IMiddleware<TContext>[];
 
-  public constructor(defaultResultFactory: () => TResult, ...middleware: IMiddleware<TSource, TResult>[]) {
-    this.defaultResultFactory = defaultResultFactory;
-    this.stages = middleware;
+  public constructor(...middleware: IMiddleware<TContext>[]) {
+    this.stages = [];
+    this.use(...middleware);
   }
 
-  public use(...middleware: IMiddleware<TSource, TResult>[]): Pipeline<TSource, TResult> {
-    middleware.push(...middleware);
+  public use(...middleware: IMiddleware<TContext>[]): Pipeline<TContext> {
+    this.stages.push(...middleware);
     return this;
   }
 
-  public post(sourceInput: TSource): TResult {
-    const source = _.clone(sourceInput, true);
-    const result = this.defaultResultFactory();
-
+  public invoke(context: TContext): void {
     // Special case: Pipeline with no stages
     if (this.stages.length === 0) {
-      return result;
+      return;
     }
 
     const iterator = new ArrayIterator(this.stages);
 
-    const nextStage = () => {
+    const invokeNext = () => {
       // Set-up a callback for this iteration
       // that requests the next stage
       let requestReceived = false;
-      const requestNext = () => {
+      const nextCallback = () => {
         // If the current stage's middleware has
         // requested the next stage multiple times
         // drop subsequent requests
@@ -48,18 +44,15 @@ export class Pipeline<TSource, TResult> {
         }
 
         // Move on to the next stage
-        nextStage();
+        invokeNext();
       };
 
       // Invoke the middleware for the current stage
       const currentStage = iterator.next();
-      currentStage.call(this, source, result, requestNext);
+      currentStage.call(this, context, nextCallback);
     };
 
     // Start the pipeline by priming the first stage
-    nextStage();
-
-    // Return the result
-    return result;
+    invokeNext();
   }
 }

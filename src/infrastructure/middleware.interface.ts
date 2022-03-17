@@ -1,3 +1,3 @@
-export interface IMiddleware<TSource, TResult> {
-  (source: TSource, result: TResult, next: () => void): void;
+export interface IMiddleware<TContext> {
+  (context: TContext, next: () => void): void;
 }
